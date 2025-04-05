@@ -5,24 +5,39 @@ from typing import Dict, List, Tuple
 
 
 def filter_date_range(df: pd.DataFrame, start_date: str, end_date: str) -> pd.DataFrame:
+    """
+    Filters the dataframe to only include rows within the specified date range.
+    """
     df['gm_samp_collection_date'] = pd.to_datetime(df['gm_samp_collection_date'])
 
     return df[(df['gm_samp_collection_date'] >= start_date) & 
              (df['gm_samp_collection_date'] <= end_date)]
 
 def remove_missing_results(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Removes rows with missing results.
+    """
     return df.dropna(subset=['gm_result'])
 
 def extract_relevant_columns(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Extracts the relevant columns from the dataframe.
+    """
     columns = ['gm_chemical_vvl', 'gm_result', 'gm_samp_collection_date', 
               'gm_latitude', 'gm_longitude']
 
     return df[columns].sort_values(by='gm_samp_collection_date', ascending=False)
 
 def load_county_shapefile(file_path: str) -> gpd.GeoDataFrame:
+    """
+    Loads the county shapefile.
+    """
     return gpd.read_file(file_path)
 
 def calculate_county_bounds(gdf: gpd.GeoDataFrame) -> Dict[str, Dict[str, float]]:
+    """
+    Calculates the bounds of the counties in the shapefile.
+    """
     county_bounds = {}
     for _, row in gdf.iterrows():
         county_name = row['NAME']
@@ -36,6 +51,9 @@ def calculate_county_bounds(gdf: gpd.GeoDataFrame) -> Dict[str, Dict[str, float]
     return county_bounds
 
 def get_california_counties() -> List[str]:
+    """
+    Returns a list of all the counties in California.
+    """
     return ['Alameda', 'Alpine', 'Amador', 'Butte', 'Calaveras', 'Colusa',
             'Contra Costa', 'Del Norte', 'El Dorado', 'Tulare', 'Fresno',
             'Glenn', 'Humboldt', 'Imperial', 'Inyo', 'Kern', 'Kings', 'Lake',
@@ -50,6 +68,9 @@ def get_california_counties() -> List[str]:
 
 def get_county_from_bounds(lat: float, lon: float, 
                           county_bounds: Dict[str, Dict[str, float]]) -> str:
+    """
+    Returns the county that the point is in.
+    """
     for county, bounds in county_bounds.items():
         if (bounds['min_lat'] <= lat <= bounds['max_lat'] and 
             bounds['min_lon'] <= lon <= bounds['max_lon']):
@@ -58,6 +79,9 @@ def get_county_from_bounds(lat: float, lon: float,
 
 def add_county_column(df: pd.DataFrame, 
                      county_bounds: Dict[str, Dict[str, float]]) -> pd.DataFrame:
+    """
+    Adds a county column to the dataframe.
+    """
     df['county'] = df.apply(
         lambda row: get_county_from_bounds(row['gm_latitude'], 
                                          row['gm_longitude'], 
@@ -67,6 +91,9 @@ def add_county_column(df: pd.DataFrame,
     return df
 
 def create_wide_format(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Creates a wide format dataframe from the long format dataframe.
+    """
     # Group by county, date, and chemical
     grouped_df = df.groupby(['county', 'gm_samp_collection_date', 'gm_chemical_vvl'])['gm_result'].mean().reset_index()
     
@@ -84,6 +111,9 @@ def create_wide_format(df: pd.DataFrame) -> pd.DataFrame:
     return wide_df.sort_values(by=['county', 'gm_samp_collection_date'], ascending=False)
 
 def fill_missing_values(wide_df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Fills missing values with the annual mean.
+    """
     # Calculate annual means
     wide_df['year'] = pd.to_datetime(wide_df['gm_samp_collection_date']).dt.year
     annual_means = wide_df.groupby(['county', 'year']).mean().reset_index()
@@ -113,6 +143,9 @@ def fill_missing_values(wide_df: pd.DataFrame) -> pd.DataFrame:
     return wide_df_filled.fillna(0)
 
 def calculate_total_pfas(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Calculates the total PFAS concentration for each county.
+    """
     pfas_columns = df.columns.difference(['county', 'gm_samp_collection_date'])
     df['total_pfas_concentration'] = df[pfas_columns].sum(axis=1)
     return df

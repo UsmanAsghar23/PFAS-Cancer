@@ -4,6 +4,9 @@ from sklearn.metrics import mean_squared_error
 import numpy as np
 
 def predict_cancer_incidence(df):
+    """
+    Predicts cancer incidence based on PFAS concentration and other features.
+    """
     # Group by specified columns and calculate average PFAS concentration
     avg_df = df[df['Cancer'] == 'AllSite'].groupby(['county', 'Sex', 'PopTot', "Cancer_Incidents"])['total_pfas_concentration'].mean().reset_index()
     avg_df = avg_df[["PopTot", "total_pfas_concentration", "Sex", "Cancer_Incidents"]]
@@ -36,6 +39,8 @@ def predict_cancer_incidence(df):
     y_pred_gb = gb.predict(X_test)
     gb_rmse = mean_squared_error(y_test, y_pred_gb)
 
+    print(f"Random Forest RMSE: {rf_rmse**0.5:.3f}")
+    print(f"Gradient Boosting RMSE: {gb_rmse**0.5:.3f}")
+    print(f"Baseline RMSE: {baseline_rmse**0.5:.3f}")
 
     return rf_rmse, gb_rmse, baseline_rmse
-

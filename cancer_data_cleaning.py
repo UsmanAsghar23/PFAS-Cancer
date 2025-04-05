@@ -2,6 +2,10 @@ import pandas as pd
 
 
 def clean_cancer_data(df: pd.DataFrame) -> pd.DataFrame: 
+    """
+    Cleans the cancer data by filtering for specific sex and year values, removing rows with missing AAIR values,
+    and selecting relevant columns.
+    """
     # Filter for specific sex and year values
     df = df[(df['Sex'] != "Both") & (df['Years'] == "05yr")]
 
@@ -17,6 +21,9 @@ def clean_cancer_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 def split_combined_counties(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Splits combined counties into individual counties and adjusts population and cancer incidents accordingly.
+    """
     # California Populations from https://www.california-demographics.com/counties_by_population
     population_dict = {
         "Tulare": 479468,

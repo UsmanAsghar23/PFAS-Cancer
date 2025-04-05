@@ -3,13 +3,16 @@ import numpy as np
 import seaborn as sns
 
 def get_top_ten_pfas_counties(df):
+    """
+    Plots the top 10 counties by average total PFAS concentration.
+    """
     # Calculate average PFAS concentration per county
     avg_pfas_by_county = df.groupby('county')['total_pfas_concentration'].mean().reset_index()
     # Sort by concentration in descending order
     avg_pfas_by_county = avg_pfas_by_county.sort_values('total_pfas_concentration', ascending=False)
 
     # Display the results
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(6, 4))
     plt.bar(avg_pfas_by_county['county'][:10], avg_pfas_by_county['total_pfas_concentration'][:10])
     plt.xticks(rotation=45, ha='right')
     plt.xlabel('County')
@@ -20,6 +23,9 @@ def get_top_ten_pfas_counties(df):
 
 
 def get_top_ten_cancer_counties(df):
+    """
+    Plots the top 10 counties by total cancer incidents.
+    """
     # Get unique cancer incidents by county by first dropping duplicates
     unique_cancer_df = df.drop_duplicates(subset=['county', 'Cancer', 'Sex', 'Cancer_Incidents'])
 
@@ -39,7 +45,7 @@ def get_top_ten_cancer_counties(df):
     # Apply log transformation to Cancer_Incidents
     plot_data['Cancer_Incidents'] = np.log(plot_data['Cancer_Incidents'])
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(6, 4))
     sns.barplot(
         data=plot_data,
         x="county",
@@ -59,6 +65,9 @@ def get_top_ten_cancer_counties(df):
     return plt
 
 def hypothesis_plot(df):
+    """
+    Plots the relationship between total PFAS concentration and total cancer incidents.
+    """
     # Filter for AllSite cancer and get unique values per county
     allsite_data = df[df['Cancer'] == 'AllSite'].drop_duplicates(subset=['county', 'Sex', 'Cancer_Incidents'])
 
