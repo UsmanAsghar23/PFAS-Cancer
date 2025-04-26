@@ -66,43 +66,35 @@ def get_top_ten_cancer_counties(df):
 
 def hypothesis_plot(df):
     """
-    Plots the relationship between total PFAS concentration and total cancer incidents.
+    Plots the relationship between total PFAS concentration and age-adjusted cancer incident rates (AAIR).
     """
-    # Filter for AllSite cancer and get unique values per county
-    allsite_data = df[df['Cancer'] == 'AllSite'].drop_duplicates(subset=['county', 'Sex', 'Cancer_Incidents'])
+    allsite_data = df[df['Cancer'] == 'AllSite'].drop_duplicates(subset=['county', 'Sex', 'AAIR'])
 
-    # Sum cancer incidents by county
-    cancer_by_county = allsite_data.groupby('county')['Cancer_Incidents'].sum().reset_index()
-
-    # Get PFAS concentration per county (using first occurrence since it's constant per county)
+    aair_by_county = allsite_data.groupby('county')['AAIR'].mean().reset_index()
     pfas_by_county = df.groupby('county')['total_pfas_concentration'].first().reset_index()
 
-    # Merge cancer and PFAS data
-    merged_data = cancer_by_county.merge(pfas_by_county, on='county')
+    merged_data = aair_by_county.merge(pfas_by_county, on='county')
     merged_data = merged_data.sort_values('total_pfas_concentration')
+    merged_data['log_AAIR'] = np.log10(merged_data['AAIR'])
 
-    # Apply log transformation only to Cancer_Incidents
-    merged_data['log_Cancer_Incidents'] = np.log(merged_data['Cancer_Incidents'])
-
-    # Create the plot
     plt.figure(figsize=(8, 6))
 
-    # Plot scatter points
-    plt.scatter(merged_data['total_pfas_concentration'], merged_data['log_Cancer_Incidents'])
 
-    # Add trendline
-    z = np.polyfit(merged_data['total_pfas_concentration'], merged_data['log_Cancer_Incidents'], 1)
+    plt.scatter(merged_data['total_pfas_concentration'], merged_data['log_AAIR'])
+
+  
+    z = np.polyfit(merged_data['total_pfas_concentration'], merged_data['log_AAIR'], 1)
     p = np.poly1d(z)
     plt.plot(merged_data['total_pfas_concentration'], p(merged_data['total_pfas_concentration']), "r--", alpha=0.8)
 
     plt.xlabel('Total PFAS Concentration (ng/L)')
-    plt.ylabel('Log of Total Cancer Incidents (AllSite)')
-    plt.title('Counties with a Higher PFAS Concentration Are Associated with Increased Number of Cancer Incidents')
+    plt.ylabel('Log10 of Age-Adjusted Cancer Incident Rate (AAIR)')
+    plt.title('Higher PFAS Concentration Associated with Increased Age-Adjusted Cancer Incident Rates')
 
-    # Add county labels
+  
     for i, row in merged_data.iterrows():
         plt.annotate(row['county'], 
-                    (row['total_pfas_concentration'], row['log_Cancer_Incidents']), 
+                    (row['total_pfas_concentration'], row['log_AAIR']), 
                     xytext=(5, 5), textcoords='offset points', fontsize=8)
 
     plt.tight_layout()
