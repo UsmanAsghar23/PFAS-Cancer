@@ -24,49 +24,43 @@ def get_top_ten_pfas_counties(df):
 
 def get_top_ten_cancer_counties(df):
     """
-    Plots the top 10 counties by total cancer incidents.
+    Plots the top 10 counties by total cancer incidents using AAIR directly (no log transformation).
     """
-    # Get unique cancer incidents by county by first dropping duplicates
     unique_cancer_df = df.drop_duplicates(subset=['county', 'Cancer', 'Sex', 'Cancer_Incidents'])
 
-    # Now sum up the unique cancer incidents by county
     cancer_by_county = unique_cancer_df.groupby("county")["Cancer_Incidents"].sum().reset_index()
     cancer_by_county = cancer_by_county.sort_values(by="Cancer_Incidents", ascending=False)
 
-        # Filter out AllSite and get top 10 counties
     top_10_counties = cancer_by_county["county"][:10].tolist()
 
-    # Filter data for top 10 counties and exclude AllSite
     plot_data = df[
         (df["county"].isin(top_10_counties)) & 
         (df["Cancer"] != "AllSite")
     ].copy()
 
-    # Apply log transformation to Cancer_Incidents
-    plot_data['Cancer_Incidents'] = np.log(plot_data['Cancer_Incidents'])
-
-    plt.figure(figsize=(6, 4))
+    plt.figure(figsize=(8, 5))
     sns.barplot(
         data=plot_data,
         x="county",
-        y="Cancer_Incidents", 
+        y="AAIR", 
         hue="Cancer",
         errorbar=None,
-        palette="deep" # Using husl palette for better color differentiation
+        palette="deep",
+        width=0.9
     )
 
     plt.xlabel("County")
-    plt.ylabel("Log of Cancer Incidents")
-    plt.title("Log-Transformed Cancer Incidents by Type in Top 10 Counties")
+    plt.ylabel("AAIR")
+    plt.title("Age-Adjusted Incident Rate(AAIR) by Cancer Type in Top 10 Counties")
     plt.xticks(rotation=45)
-    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', prop={'size': 8}) 
     plt.tight_layout()
 
     return plt
 
 def hypothesis_plot(df):
     """
-    Plots the relationship between total PFAS concentration and age-adjusted cancer incident rates (AAIR).
+    Plots the relationship between age-adjusted cancer incident rates (AAIR) and total PFAS concentration.
     """
     allsite_data = df[df['Cancer'] == 'AllSite'].drop_duplicates(subset=['county', 'Sex', 'AAIR'])
 
@@ -74,28 +68,25 @@ def hypothesis_plot(df):
     pfas_by_county = df.groupby('county')['total_pfas_concentration'].first().reset_index()
 
     merged_data = aair_by_county.merge(pfas_by_county, on='county')
-    merged_data = merged_data.sort_values('total_pfas_concentration')
-    merged_data['log_AAIR'] = np.log10(merged_data['AAIR'])
+    merged_data = merged_data.sort_values('AAIR')
+    merged_data['log_PFAS'] = np.log10(merged_data['total_pfas_concentration'])
 
     plt.figure(figsize=(8, 6))
 
+    plt.scatter(merged_data['AAIR'], merged_data['log_PFAS'])
 
-    plt.scatter(merged_data['total_pfas_concentration'], merged_data['log_AAIR'])
-
-  
-    z = np.polyfit(merged_data['total_pfas_concentration'], merged_data['log_AAIR'], 1)
+    z = np.polyfit(merged_data['AAIR'], merged_data['log_PFAS'], 1)
     p = np.poly1d(z)
-    plt.plot(merged_data['total_pfas_concentration'], p(merged_data['total_pfas_concentration']), "r--", alpha=0.8)
+    plt.plot(merged_data['AAIR'], p(merged_data['AAIR']), "r--", alpha=0.8)
 
-    plt.xlabel('Total PFAS Concentration (ng/L)')
-    plt.ylabel('Log10 of Age-Adjusted Cancer Incident Rate (AAIR)')
-    plt.title('Higher PFAS Concentration Associated with Increased Age-Adjusted Cancer Incident Rates')
+    plt.xlabel('Age-Adjusted Cancer Incident Rate (AAIR)')
+    plt.ylabel('Log10 of Total PFAS Concentration (ng/L)')
+    plt.title('Higher AAIR Associated with Increased Total PFAS Concentration')
 
-  
     for i, row in merged_data.iterrows():
         plt.annotate(row['county'], 
-                    (row['total_pfas_concentration'], row['log_AAIR']), 
-                    xytext=(5, 5), textcoords='offset points', fontsize=8)
+                     (row['AAIR'], row['log_PFAS']), 
+                     xytext=(5, 5), textcoords='offset points', fontsize=8)
 
     plt.tight_layout()
     return plt
