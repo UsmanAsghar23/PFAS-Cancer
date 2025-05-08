@@ -71,7 +71,7 @@ def hypothesis_plot(df):
     merged_data = merged_data.sort_values('AAIR')
     merged_data['log_PFAS'] = np.log10(merged_data['total_pfas_concentration'])
 
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(8, 5))
 
     plt.scatter(merged_data['AAIR'], merged_data['log_PFAS'])
 
